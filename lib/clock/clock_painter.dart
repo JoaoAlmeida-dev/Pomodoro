@@ -43,28 +43,66 @@ class ClockPainter extends CustomPainter {
     canvas.drawCircle(center, radius - 40, fillBrush);
     canvas.drawCircle(center, radius - 40, outLineBrush);
 
-    paintClockHands(canvas: canvas, center: center, radius: radius);
-
-    canvas.drawCircle(center, 16, centerDotBrush);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius - 20),
-      ((time.hour * 30 + time.minute * 0.5) * math.pi / 180) - (math.pi / 2),
-      ((endTime.hour * 30 + endTime.minute * 0.5) * math.pi / 180) -
-          (math.pi / 2),
-      false,
-      Paint()
-        //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
-        ..color = time.compareTo(endTime) < 0 ? Colors.green : Colors.red
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 8,
-    );
-
     paint12HourTexts(canvas: canvas, center: center, radius: radius);
     paint24HourTexts(canvas: canvas, center: center, radius: radius);
     paintHourOutterIndicatorLines(
         canvas: canvas, center: center, radius: radius);
+
+    paintClockHands(canvas: canvas, center: center, radius: radius);
+
+    paintTimeDifference(canvas: canvas, center: center, radius: radius);
+
+    canvas.drawCircle(center, 16, centerDotBrush);
   }
+
+  void paintTimeDifference({
+    required Canvas canvas,
+    required Offset center,
+    required double radius,
+  }) {
+    var paint = Paint()
+    //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..color = time.compareTo(endTime) < 0 ? Colors.green : Colors.red
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 8;
+
+    var angleTime=    time.hour * 30 +
+        time.minute * 0.5 +
+        time.second * 0.00833333333 +
+        time.millisecond * 0.00833333333 / 1000;
+
+    final double timeX = center.dx +
+        radius * 0.9 * math.sin(angleTime * math.pi / 180);
+    final double timeY = center.dy +
+        radius * 0.9 * -math.cos(angleTime * math.pi / 180);
+
+    var angleEndTime= endTime.hour * 30 + endTime.minute * 0.5 + endTime.second * 0.00833333333 +
+        endTime.millisecond * 0.00833333333 / 1000;
+    final double endTimeX = center.dx +
+        radius * 0.9 * math.sin(angleEndTime * math.pi / 180);
+    final double endTimeY = center.dy +
+        radius * 0.9 * -math.cos(angleEndTime * math.pi / 180);
+
+    canvas.drawLine(center,Offset(timeX, timeY) ,paint..color=Colors.green);
+    canvas.drawLine(center,Offset(endTimeX, endTimeY) ,paint..color=Colors.red);
+    canvas.drawLine(Offset(timeX, timeY),Offset(endTimeX, endTimeY) ,paint..color=Colors.yellowAccent);
+
+    // canvas.drawArc(
+    //   Rect.fromCircle(center: center, radius: radius - 20),
+    //   (angleTime * math.pi / 180) - (math.pi / 2),
+    //   (angleEndTime * math.pi / 180) -
+    //       (math.pi / 2),
+    //   false,
+    //   Paint()
+    //   //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+    //     ..color = time.compareTo(endTime) < 0 ? Colors.green : Colors.red
+    //     ..strokeCap = StrokeCap.round
+    //     ..style = PaintingStyle.stroke
+    //     ..strokeWidth = 8,
+    // );
+  }
+
 
   void paintClockHands({
     required Canvas canvas,

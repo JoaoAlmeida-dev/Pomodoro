@@ -46,11 +46,12 @@ class MyHomePage extends StatelessWidget {
 
 class _ClockPageState extends State<ClockPage> {
   DateTime _currentTime = DateTime.now();
-  final DateTime _endTime = DateTime(2023, 5, 10, 1, 55);
+  DateTime _endTime = DateTime(2023, 5, 10, 23, 00);
   late Timer timer;
 
   @override
   Widget build(BuildContext context) {
+    _endTime = DateTime(2023,6, 10, 23, 18);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
