@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepPurple,
       ),
       home: const MyHomePage(),
     );
@@ -38,43 +38,83 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: ClockPage(),
-    );
+    return const ClockPage();
   }
 }
 
 class _ClockPageState extends State<ClockPage> {
   DateTime _currentTime = DateTime.now();
-  DateTime _endTime = DateTime(2023, 5, 10, 23, 00);
+  DateTime? _alarmTime;
+  Duration? timeDiff;
   late Timer timer;
 
   @override
   Widget build(BuildContext context) {
-    _endTime = DateTime(2023,6, 10, 23, 18);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          DateFormat("'now:' y/M/d H:m:s:S").format(_currentTime),
-          style: Theme.of(context).textTheme.titleLarge,
+    return Scaffold(
+      bottomSheet: BottomSheet(
+        onClosing: () {},
+        enableDrag: false,
+        builder: (context) => Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+                onPressed: () {
+                  showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(_currentTime),
+                  ).then(
+                    (var value) => setState(() {
+                      if (value != null) {
+                        _alarmTime = DateTime(
+                            _currentTime.year,
+                            _currentTime.month,
+                            _currentTime.day,
+                            value.hour,
+                            value.minute);
+                        timeDiff = _alarmTime!.difference(_currentTime);
+                      }
+                    }),
+                  );
+                },
+                child: const Text("Choose new alarm")),
+          ],
         ),
-        SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height / 2,
-          child: CustomPaint(
-            painter: ClockPainter(
-              time: _currentTime,
-              endTime: _endTime,
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height / 2,
+            child: CustomPaint(
+              painter: ClockPainter(
+                primaryColor: Colors.brown,
+                //timediffNegativeColor: Colors.redAccent,
+                //timediffPositiveColor: Colors.black,
+                time: _currentTime,
+                endTime: _alarmTime,
+              ),
             ),
           ),
-        ),
-        Text(
-          DateFormat("'endTime:' y/M/d H:m:s:S").format(_endTime),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-      ],
+          if (_alarmTime != null)
+            Text(
+              DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          if (timeDiff != null)
+            Text(
+              timeDiff!.inMinutes > 1
+                  ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
+                  : "Difference: ${timeDiff!.inSeconds} seconds",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+        ],
+      ),
     );
   }
 
@@ -90,6 +130,13 @@ class _ClockPageState extends State<ClockPage> {
     timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
         _currentTime = DateTime.now();
+        if (_alarmTime != null) {
+          timeDiff = _alarmTime!.difference(_currentTime);
+          if (timeDiff!.isNegative) {
+            timeDiff = null;
+            _alarmTime = null;
+          }
+        }
       });
     });
   }

@@ -4,26 +4,45 @@ import 'package:flutter/material.dart';
 
 class ClockPainter extends CustomPainter {
   final DateTime time;
-  final DateTime endTime;
-  final Color _outterColor;
+  final DateTime? endTime;
+  final Color _borderColor;
   final Color _backgroundColor;
-  final Color _hourColor;
-  final Color _minColor;
-  final Color _secColor;
+  final Color _hourPointerColor;
+  final Color _minPointerColor;
+  final Color _secPointerColor;
+  final Color _minTextColor;
+  final Color _hour12TextColor;
+  final Color _hour24TextColor;
+  final Color _timediffPositiveColor;
+  final Color _timediffNegativeColor;
+  final MaterialColor primaryColor;
 
-  ClockPainter(
-      {required this.time,
-      required this.endTime,
-      Color? outterColor,
-      Color? backgroundColor,
-      Color? hourColor,
-      Color? minColor,
-      Color? secColor})
-      : _outterColor = outterColor ?? const Color(0xFF727EF8),
-        _backgroundColor = backgroundColor ?? const Color(0xFF444974),
-        _hourColor = hourColor ?? Colors.purple.shade900,
-        _minColor = minColor ?? Colors.purple.shade500,
-        _secColor = secColor ?? Colors.purple.shade200;
+
+  ClockPainter({required this.time,
+    required this.endTime,
+    required this.primaryColor,
+    Color? borderColor,
+    Color? backgroundColor,
+    Color? hourPointerColor,
+    Color? minPointerColor,
+    Color? secPointerColor,
+    Color? minTextColor,
+    Color? hour12TextColor,
+    Color? hour24TextColor,
+    Color? timediffPositiveColor,
+    Color? timediffNegativeColor,
+  })
+      : _borderColor = borderColor ?? primaryColor.shade900,
+        _backgroundColor = backgroundColor ?? primaryColor.shade800,
+        _hourPointerColor = hourPointerColor ?? primaryColor.shade700,
+        _minPointerColor = minPointerColor ?? primaryColor.shade500,
+        _secPointerColor = secPointerColor ?? primaryColor.shade200,
+        _minTextColor = minTextColor ?? primaryColor.shade200,
+        _hour12TextColor = hour12TextColor ?? primaryColor.shade200,
+        _hour24TextColor = hour24TextColor ?? primaryColor.shade200,
+        _timediffPositiveColor = timediffPositiveColor ?? primaryColor.shade200,
+        _timediffNegativeColor = timediffNegativeColor ?? primaryColor.shade800
+  ;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -32,75 +51,74 @@ class ClockPainter extends CustomPainter {
     final Offset center = Offset(centerX, centerY);
     final double radius = math.min(centerX, centerY);
 
-    final fillBrush = Paint()..color = _backgroundColor;
+    final fillBrush = Paint()
+      ..color = _backgroundColor;
     final outLineBrush = Paint()
-      ..color = _outterColor
+      ..color = _borderColor
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 16;
-    final centerDotBrush = Paint()..color = _outterColor;
+    final centerDotBrush = Paint()
+      ..color = _borderColor;
 
     canvas.drawCircle(center, radius - 40, fillBrush);
     canvas.drawCircle(center, radius - 40, outLineBrush);
 
-    paint12HourTexts(canvas: canvas, center: center, radius: radius);
+    //paint12HourTexts(canvas: canvas, center: center, radius: radius);
     paint24HourTexts(canvas: canvas, center: center, radius: radius);
-    paintHourOutterIndicatorLines(
+    paint12HourInfo(
         canvas: canvas, center: center, radius: radius);
+    paintMinutes(canvas: canvas, center: center, radius: radius);
 
     paintClockHands(canvas: canvas, center: center, radius: radius);
-
-    paintTimeDifference(canvas: canvas, center: center, radius: radius);
+    if (endTime != null) {
+      paintTimeDifference(canvas: canvas,
+          center: center,
+          radius: radius,
+          endTime: endTime!,
+          startTime: time);
+    }
 
     canvas.drawCircle(center, 16, centerDotBrush);
   }
 
-  void paintTimeDifference({
+  void paint24HourTexts({
     required Canvas canvas,
     required Offset center,
     required double radius,
   }) {
-    var paint = Paint()
-    //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
-      ..color = time.compareTo(endTime) < 0 ? Colors.green : Colors.red
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8;
+    TextStyle textStyle = TextStyle(
+      color: _hour24TextColor,
+      fontSize: 20,
+    );
+    double distanceFromCenter = radius * 0.4;
 
-    var angleTime=    time.hour * 30 +
-        time.minute * 0.5 +
-        time.second * 0.00833333333 +
-        time.millisecond * 0.00833333333 / 1000;
+    List < ({int angle, int hour}) > hourAngleList = [
+      (hour:24, angle:0),
+      (hour:6, angle:90),
+      (hour:12, angle:180),
+      (hour:18, angle:270)
+    ];
 
-    final double timeX = center.dx +
-        radius * 0.9 * math.sin(angleTime * math.pi / 180);
-    final double timeY = center.dy +
-        radius * 0.9 * -math.cos(angleTime * math.pi / 180);
+    for (({int angle, int hour}) hourAngle in hourAngleList) {
+      TextPainter textPainter = TextPainter(
+        text: TextSpan(
+          text: hourAngle.hour.toString(),
+          style: textStyle,
+        ),
+        textDirection: TextDirection.ltr,
+      )
+        ..layout(minWidth: 0, maxWidth: 40);
 
-    var angleEndTime= endTime.hour * 30 + endTime.minute * 0.5 + endTime.second * 0.00833333333 +
-        endTime.millisecond * 0.00833333333 / 1000;
-    final double endTimeX = center.dx +
-        radius * 0.9 * math.sin(angleEndTime * math.pi / 180);
-    final double endTimeY = center.dy +
-        radius * 0.9 * -math.cos(angleEndTime * math.pi / 180);
 
-    canvas.drawLine(center,Offset(timeX, timeY) ,paint..color=Colors.green);
-    canvas.drawLine(center,Offset(endTimeX, endTimeY) ,paint..color=Colors.red);
-    canvas.drawLine(Offset(timeX, timeY),Offset(endTimeX, endTimeY) ,paint..color=Colors.yellowAccent);
+      double x1 = center.dx - textPainter.width / 2 +
+          distanceFromCenter * math.sin(hourAngle.angle * math.pi / 180);
+      double y1 = center.dy - textPainter.height / 2 +
+          distanceFromCenter * -math.cos(hourAngle.angle * math.pi / 180);
 
-    // canvas.drawArc(
-    //   Rect.fromCircle(center: center, radius: radius - 20),
-    //   (angleTime * math.pi / 180) - (math.pi / 2),
-    //   (angleEndTime * math.pi / 180) -
-    //       (math.pi / 2),
-    //   false,
-    //   Paint()
-    //   //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
-    //     ..color = time.compareTo(endTime) < 0 ? Colors.green : Colors.red
-    //     ..strokeCap = StrokeCap.round
-    //     ..style = PaintingStyle.stroke
-    //     ..strokeWidth = 8,
-    // );
+
+      textPainter.paint(canvas, Offset(x1, y1));
+    }
   }
 
 
@@ -115,7 +133,7 @@ class ClockPainter extends CustomPainter {
     final hourProperties = PointerProperties(
       length: 0.3,
       paint: Paint()
-        ..color = _hourColor
+        ..color = _hourPointerColor
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 15,
@@ -125,7 +143,7 @@ class ClockPainter extends CustomPainter {
       length: 0.4,
       paint: Paint()
         ..strokeCap = StrokeCap.round
-        ..color = _minColor
+        ..color = _minPointerColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10,
     );
@@ -133,8 +151,8 @@ class ClockPainter extends CustomPainter {
     final secProperties = PointerProperties(
       length: 0.6,
       paint: Paint()
-        //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
-        ..color = _secColor
+      //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+        ..color = _secPointerColor
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke
         ..strokeWidth = 6,
@@ -169,18 +187,24 @@ class ClockPainter extends CustomPainter {
     canvas.drawLine(center, Offset(secHandX, secHandY), secProperties.paint);
   }
 
-  void paintHourOutterIndicatorLines({
+  void paint12HourInfo({
     required Canvas canvas,
     required Offset center,
     required double radius,
   }) {
     final Paint lineBrush = Paint()
-      //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
-      ..color = _outterColor
+    //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..color = _borderColor
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6;
 
+    TextStyle textStyle = TextStyle(
+      color: _hour12TextColor,
+      fontSize: 20,
+    );
+
+    double hourDistanceFromCenter = radius * 0.6;
     double outterLineDistance = radius * 0.8;
     double innerLineDistance = radius * 0.7;
     for (double i = 0; i < 360; i += 30) {
@@ -191,72 +215,142 @@ class ClockPainter extends CustomPainter {
       double y2 = center.dy + innerLineDistance * -math.cos(i * math.pi / 180);
 
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), lineBrush);
+
+      int minute = i == 0 ? 12 : (i * 12 / 360).floor();
+      TextPainter textPainter = TextPainter(
+        text: TextSpan(
+          text: minute.toString(),
+          style: textStyle,
+        ),
+        textDirection: TextDirection.ltr,
+      )
+        ..layout(minWidth: 0, maxWidth: 40);
+
+
+      double hourX1 = center.dx - textPainter.width / 2 +
+          hourDistanceFromCenter * math.sin(i * math.pi / 180);
+      double hourY1 = center.dy - textPainter.height / 2 +
+          hourDistanceFromCenter * -math.cos(i * math.pi / 180);
+
+      textPainter.paint(canvas, Offset(hourX1, hourY1));
     }
   }
 
-  void paint12HourTexts({
+  void paintMinutes({
     required Canvas canvas,
     required Offset center,
     required double radius,
   }) {
     TextStyle textStyle = TextStyle(
-      color: _secColor,
-      fontSize: 30,
+      color: _minTextColor,
+      fontSize: 10,
     );
-    double distanceFromCenter = radius * 0.6;
-
-    List<({int angle, int hour})> hourAngleList=[(hour:12,angle:0),(hour:3,angle:90),(hour:6,angle:180),(hour:9,angle:270)];
-
-    for(({int angle, int hour}) hourAngle in hourAngleList){
-      TextPainter textPainter = TextPainter(
-        text: TextSpan(
-          text: hourAngle.hour.toString(),
-          style: textStyle,
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(minWidth: 0, maxWidth: 40);
+    double distanceFromCenter = radius * 0.77;
 
 
-      double x1 = center.dx - textPainter.width / 2 + distanceFromCenter * math.sin(hourAngle.angle * math.pi / 180);
-      double y1 = center.dy  - textPainter.height / 2 + distanceFromCenter * -math.cos(hourAngle.angle * math.pi / 180);
+    for (int i = 0; i < 360; i += 6) {
+      if (i % 30 == 0) {
+        int minute = i == 0 ? 60 : (i * 60 / 360).floor();
+        TextPainter textPainter = TextPainter(
+          text: TextSpan(
+            text: minute.toString(),
+            style: textStyle,
+          ),
+          textDirection: TextDirection.ltr,
+        )
+          ..layout(minWidth: 0, maxWidth: 40);
 
 
-      textPainter.paint(canvas, Offset(x1, y1));
+        double x1 = center.dx - textPainter.width / 2 +
+            distanceFromCenter * math.sin(i * math.pi / 180);
+        double y1 = center.dy - textPainter.height / 2 +
+            distanceFromCenter * -math.cos(i * math.pi / 180);
 
+
+        textPainter.paint(canvas, Offset(x1, y1));
+      } else {
+        final Paint lineBrush = Paint()
+        //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+          ..color = _backgroundColor
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
+        var outterLineDistance = radius * 0.8;
+        var innerLineDistance = radius * 0.75;
+
+        double linex1 = center.dx +
+            outterLineDistance * math.sin(i * math.pi / 180);
+        double liney1 = center.dy +
+            outterLineDistance * -math.cos(i * math.pi / 180);
+
+        double linex2 = center.dx +
+            innerLineDistance * math.sin(i * math.pi / 180);
+        double liney2 = center.dy +
+            innerLineDistance * -math.cos(i * math.pi / 180);
+
+        canvas.drawLine(
+            Offset(linex1, liney1), Offset(linex2, liney2), lineBrush);
+      }
     }
-
   }
 
-  void paint24HourTexts({
+  void paintTimeDifference({
     required Canvas canvas,
     required Offset center,
     required double radius,
+    required DateTime endTime,
+    required DateTime startTime
   }) {
-    TextStyle textStyle = TextStyle(
-      color: _secColor,
-      fontSize: 20,
+    Duration timeDifference = endTime.difference(startTime);
+    final Paint arcPaint = Paint()
+    //..shader = const RadialGradient(colors: [Colors.lightBlue, Colors.pink]).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..color = !timeDifference.isNegative ? _timediffPositiveColor : _timediffNegativeColor
+      ..strokeCap = StrokeCap.square
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeJoin=StrokeJoin.bevel
+    ;
+
+
+    var angleTime = 0;
+
+    var minutesDifference = timeDifference.inMinutes -
+        timeDifference.inHours * 60;
+    var secondsDifference = timeDifference.inSeconds -
+        timeDifference.inMinutes * 60;
+    var angleEndTime = minutesDifference * 6 +
+        secondsDifference * 0.1; //+  milliSecondsDifference * 0.0001;
+
+
+
+    Paint timerPointerPaint=arcPaint..strokeWidth=3;
+
+
+    final double outterArcDistance =radius * 0.82;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: outterArcDistance),
+      ((angleTime - 90) * math.pi / 180),
+      ((angleEndTime) * math.pi / 180),
+      false,
+      arcPaint,
     );
-    double distanceFromCenter = radius * 0.4;
+    final double outterArcLength =radius * 0.03;
+    final double outterArcPointerStartX = center.dx + outterArcDistance * math.sin(angleEndTime * math.pi / 180);
+    final double outterArcPointerStartY = center.dy + outterArcDistance * -math.cos(angleEndTime * math.pi / 180);
+    final double outterArcPointerEndX = center.dx + (outterArcDistance-outterArcLength) * math.sin(angleEndTime * math.pi / 180);
+    final double outterArcPointerEndY = center.dy + (outterArcDistance-outterArcLength) * -math.cos(angleEndTime * math.pi / 180);
+    canvas.drawLine(Offset(outterArcPointerEndX, outterArcPointerEndY) ,Offset(outterArcPointerStartX, outterArcPointerStartY) ,timerPointerPaint);
 
-    List<({int angle, int hour})> hourAngleList=[(hour:24,angle:0),(hour:6,angle:90),(hour:12,angle:180),(hour:18,angle:270)];
-
-    for(({int angle, int hour}) hourAngle in hourAngleList){
-      TextPainter textPainter = TextPainter(
-        text: TextSpan(
-          text: hourAngle.hour.toString(),
-          style: textStyle,
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout(minWidth: 0, maxWidth: 40);
+    final double innerArcDistance =radius * 0.09;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: innerArcDistance),
+      ((angleTime - 90) * math.pi / 180),
+      ((angleEndTime) * math.pi / 180),
+      false,
+      arcPaint,
+    );
 
 
-      double x1 = center.dx - textPainter.width / 2 + distanceFromCenter * math.sin(hourAngle.angle * math.pi / 180);
-      double y1 = center.dy  - textPainter.height / 2 + distanceFromCenter * -math.cos(hourAngle.angle * math.pi / 180);
-
-
-      textPainter.paint(canvas, Offset(x1, y1));
-
-    }
   }
 
   @override
@@ -264,9 +358,6 @@ class ClockPainter extends CustomPainter {
     return oldDelegate.time != time || oldDelegate.endTime != endTime;
   }
 
-  double radiansFromDateTime(DateTime time) {
-    return 0;
-  }
 }
 
 class PointerProperties {
