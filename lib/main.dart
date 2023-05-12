@@ -98,40 +98,46 @@ class _ClockPageState extends State<ClockPage> {
       body: SafeArea(
         bottom: true,
         maintainBottomViewPadding: true,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height / 2,
-              child: CustomPaint(
-                painter: ClockPainter(
-                  primaryColor: Colors.brown,
-                  timediffNegativeColor: Colors.redAccent,
-                  //timediffPositiveColor: Colors.black,
-                  time: _currentTime,
-                  endTime: _alarmTime,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              InteractiveViewer(
+                maxScale: 10,
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height / 2,
+                  child: CustomPaint(
+                    painter: ClockPainter(
+                      primaryColor: Colors.brown,
+                      timediffNegativeColor: Colors.redAccent,
+                      //timediffPositiveColor: Colors.black,
+                      time: _currentTime,
+                      endTime: _alarmTime,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            if (_alarmTime != null)
-              Text(
-                DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            if (timeDiff != null)
-              Text(
-                timeDiff!.inMinutes > 1
-                    ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
-                    : "Difference: ${timeDiff!.inSeconds} seconds",
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-          ],
+              if (_alarmTime != null)
+                Text(
+                  DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              if (timeDiff != null)
+                Text(
+                  timeDiff!.inMinutes > 1
+                      ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
+                      : "Difference: ${timeDiff!.inSeconds} seconds",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+            ],
+          ),
         ),
       ),
     );
