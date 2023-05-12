@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -52,68 +53,86 @@ class _ClockPageState extends State<ClockPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       bottomSheet: BottomSheet(
+        clipBehavior: Clip.antiAliasWithSaveLayer,
         onClosing: () {},
         enableDrag: false,
-        builder: (context) => Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton(
-                onPressed: () {
-                  showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.fromDateTime(_currentTime),
-                  ).then(
-                    (var value) => setState(() {
-                      if (value != null) {
-                        _alarmTime = DateTime(
+        builder: (context) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              TextButton(
+                  onPressed: () {
+                    showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_currentTime),
+                    ).then(
+                      (var value) => setState(() {
+                        if (value != null) {
+                          _alarmTime = DateTime(
                             _currentTime.year,
                             _currentTime.month,
                             _currentTime.day,
                             value.hour,
-                            value.minute);
-                        timeDiff = _alarmTime!.difference(_currentTime);
-                      }
-                    }),
-                  );
-                },
-                child: const Text("Choose new alarm")),
-          ],
+                            value.minute,
+                          );
+                          if (_alarmTime!.difference(_currentTime).isNegative) {
+                            _alarmTime = DateTime(
+                              _currentTime.year,
+                              _currentTime.month,
+                              _currentTime.day + 1,
+                              value.hour,
+                              value.minute,
+                            );
+                          }
+                          timeDiff = _alarmTime!.difference(_currentTime);
+                        }
+                      }),
+                    );
+                  },
+                  child: const Text("Choose new alarm")),
+            ],
+          ),
         ),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height / 2,
-            child: CustomPaint(
-              painter: ClockPainter(
-                primaryColor: Colors.brown,
-                //timediffNegativeColor: Colors.redAccent,
-                //timediffPositiveColor: Colors.black,
-                time: _currentTime,
-                endTime: _alarmTime,
+      body: SafeArea(
+        bottom: true,
+        maintainBottomViewPadding: true,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height / 2,
+              child: CustomPaint(
+                painter: ClockPainter(
+                  primaryColor: Colors.brown,
+                  timediffNegativeColor: Colors.redAccent,
+                  //timediffPositiveColor: Colors.black,
+                  time: _currentTime,
+                  endTime: _alarmTime,
+                ),
               ),
             ),
-          ),
-          if (_alarmTime != null)
-            Text(
-              DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          if (timeDiff != null)
-            Text(
-              timeDiff!.inMinutes > 1
-                  ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
-                  : "Difference: ${timeDiff!.inSeconds} seconds",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-        ],
+            if (_alarmTime != null)
+              Text(
+                DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            if (timeDiff != null)
+              Text(
+                timeDiff!.inMinutes > 1
+                    ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
+                    : "Difference: ${timeDiff!.inSeconds} seconds",
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -133,6 +152,7 @@ class _ClockPageState extends State<ClockPage> {
         if (_alarmTime != null) {
           timeDiff = _alarmTime!.difference(_currentTime);
           if (timeDiff!.isNegative) {
+            log("Alarm ended resetting state");
             timeDiff = null;
             _alarmTime = null;
           }
