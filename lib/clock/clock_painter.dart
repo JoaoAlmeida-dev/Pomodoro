@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:pomodoro/clock/models/alarm_data.dart';
 
 class ClockPainter extends CustomPainter {
-  final DateTime time;
-  final DateTime? endTime;
+  final DateTime currentTime;
+  final AlarmData? alarmData;
   final Color _borderColor;
   final Color _backgroundColor;
   final Color _hourPointerColor;
@@ -15,12 +16,13 @@ class ClockPainter extends CustomPainter {
   final Color _hour24TextColor;
   final Color _timediffPositiveColor;
   final Color _timediffNegativeColor;
-  final MaterialColor primaryColor;
+  final MaterialColor primaryMaterialColor;
 
   ClockPainter({
-    required this.time,
-    required this.endTime,
-    required this.primaryColor,
+    required this.currentTime,
+    required this.primaryMaterialColor,
+    this.alarmData,
+
     Color? borderColor,
     Color? backgroundColor,
     Color? hourPointerColor,
@@ -31,16 +33,17 @@ class ClockPainter extends CustomPainter {
     Color? hour24TextColor,
     Color? timediffPositiveColor,
     Color? timediffNegativeColor,
-  })  : _borderColor = borderColor ?? primaryColor.shade900,
-        _backgroundColor = backgroundColor ?? primaryColor.shade800,
-        _hourPointerColor = hourPointerColor ?? primaryColor.shade700,
-        _minPointerColor = minPointerColor ?? primaryColor.shade500,
-        _secPointerColor = secPointerColor ?? primaryColor.shade200,
-        _minTextColor = minTextColor ?? primaryColor.shade200,
-        _hour12TextColor = hour12TextColor ?? primaryColor.shade200,
-        _hour24TextColor = hour24TextColor ?? primaryColor.shade200,
-        _timediffPositiveColor = timediffPositiveColor ?? primaryColor.shade200,
-        _timediffNegativeColor = timediffNegativeColor ?? primaryColor.shade800;
+  })  :
+        _borderColor = borderColor ?? primaryMaterialColor.shade900,
+        _backgroundColor = backgroundColor ?? primaryMaterialColor.shade800,
+        _hourPointerColor = hourPointerColor ?? primaryMaterialColor.shade700,
+        _minPointerColor = minPointerColor ?? primaryMaterialColor.shade500,
+        _secPointerColor = secPointerColor ?? primaryMaterialColor.shade200,
+        _minTextColor = minTextColor ?? primaryMaterialColor.shade200,
+        _hour12TextColor = hour12TextColor ?? primaryMaterialColor.shade200,
+        _hour24TextColor = hour24TextColor ?? primaryMaterialColor.shade200,
+        _timediffPositiveColor = timediffPositiveColor ?? primaryMaterialColor.shade200,
+        _timediffNegativeColor = timediffNegativeColor ?? primaryMaterialColor.shade800;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -149,7 +152,7 @@ class ClockPainter extends CustomPainter {
       minProperties: minProperties,
       secProperties: secProperties,
     );
-    if (endTime != null) {
+    if (alarmData != null) {
       paintTimeDifference(
         canvas: canvas,
         center: center,
@@ -157,8 +160,7 @@ class ClockPainter extends CustomPainter {
         outterBorderCircleRadius: outterBorderCircleRadius,
         centerCircleRadius: centerCircleRadius,
         outterBorderWidth: outterBorderWidth,
-        endTime: endTime!,
-        startTime: time,
+        alarmData: alarmData!,
       );
     }
 
@@ -272,24 +274,24 @@ class ClockPainter extends CustomPainter {
     var centerX = center.dx;
     var centerY = center.dy;
 
-    final double hourHandAngle = time.hour * 30 +
-        time.minute * 0.5 +
-        time.second * 0.00833333333 +
-        time.millisecond * 0.00833333333 / 1000;
+    final double hourHandAngle = currentTime.hour * 30 +
+        currentTime.minute * 0.5 +
+        currentTime.second * 0.00833333333 +
+        currentTime.millisecond * 0.00833333333 / 1000;
     final double hourHandX = centerX +
         hourProperties.length * math.sin(hourHandAngle * math.pi / 180);
     final double hourHandY = centerY +
         hourProperties.length * -math.cos(hourHandAngle * math.pi / 180);
     canvas.drawLine(center, Offset(hourHandX, hourHandY), hourProperties.paint);
 
-    final double minHandAngle = time.minute * 6 + time.second * 0.1;
+    final double minHandAngle = currentTime.minute * 6 + currentTime.second * 0.1;
     final double minHandX =
         centerX + minProperties.length * math.sin(minHandAngle * math.pi / 180);
     final double minHandY = centerY +
         minProperties.length * -math.cos(minHandAngle * math.pi / 180);
     canvas.drawLine(center, Offset(minHandX, minHandY), minProperties.paint);
 
-    final double secHandAngle = time.second * 6 + time.millisecond * 0.006;
+    final double secHandAngle = currentTime.second * 6 + currentTime.millisecond * 0.006;
     final double secHandX =
         centerX + secProperties.length * math.sin(secHandAngle * math.pi / 180);
     final double secHandY = centerY +
@@ -359,12 +361,14 @@ class ClockPainter extends CustomPainter {
     required Canvas canvas,
     required Offset center,
     required double radius,
-    required DateTime endTime,
-    required DateTime startTime,
     required double outterBorderCircleRadius,
     required double outterBorderWidth,
     required double centerCircleRadius,
+    required AlarmData alarmData,
   }) {
+    DateTime endTime = alarmData.endTime;
+    DateTime startTime = alarmData.startTime;
+
     Duration timeDifference = endTime.difference(startTime);
     final double outterArcLength = outterBorderWidth * 0.5;
     final double innerArcDistance = centerCircleRadius;
@@ -394,30 +398,32 @@ class ClockPainter extends CustomPainter {
       ..strokeWidth = outterArcLength;
 
     var angleTime = 0;
-    var hoursDifference = timeDifference.inHours;
-    var minutesDifference =
-        timeDifference.inMinutes - timeDifference.inHours * 60;
-    var secondsDifference =
-        timeDifference.inSeconds - timeDifference.inMinutes * 60;
-    var angleEndTime = minutesDifference * 6 +
-        secondsDifference * 0.1; //+  milliSecondsDifference * 0.0001;
+    var angleEndTime = alarmData.currentPercentage(currentTime) * -360/100;
 
-    if (hoursDifference > 0) {
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: outterArcDistance),
-        (0 * math.pi / 180),
-        (360 * math.pi / 180),
-        false,
-        arcPaintBackground,
-      );
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: innerArcDistance),
-        (0 * math.pi / 180),
-        (360 * math.pi / 180),
-        false,
-        arcPaintBackground,
-      );
-    }
+    // var hoursDifference = timeDifference.inHours;
+    // var minutesDifference =
+    //     timeDifference.inMinutes - timeDifference.inHours * 60;
+    // var secondsDifference =
+    //     timeDifference.inSeconds - timeDifference.inMinutes * 60;
+    // var angleEndTime = minutesDifference * 6 +
+    //     secondsDifference * 0.1; //+  milliSecondsDifference * 0.0001;
+    //
+    // if (hoursDifference > 0) {
+    //   canvas.drawArc(
+    //     Rect.fromCircle(center: center, radius: outterArcDistance),
+    //     (0 * math.pi / 180),
+    //     (360 * math.pi / 180),
+    //     false,
+    //     arcPaintBackground,
+    //   );
+    //   canvas.drawArc(
+    //     Rect.fromCircle(center: center, radius: innerArcDistance),
+    //     (0 * math.pi / 180),
+    //     (360 * math.pi / 180),
+    //     false,
+    //     arcPaintBackground,
+    //   );
+    // }
 
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: outterArcDistance),
@@ -451,7 +457,7 @@ class ClockPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(ClockPainter oldDelegate) {
-    return oldDelegate.time != time || oldDelegate.endTime != endTime;
+    return oldDelegate.currentTime != currentTime || oldDelegate.alarmData != alarmData;
   }
 }
 

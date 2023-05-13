@@ -4,6 +4,8 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pomodoro/clock/clock_painter.dart';
+import 'package:pomodoro/clock/controller/queueController.dart';
+import 'package:pomodoro/clock/models/alarm_data.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,9 +47,8 @@ class MyHomePage extends StatelessWidget {
 
 class _ClockPageState extends State<ClockPage> {
   DateTime _currentTime = DateTime.now();
-  DateTime? _alarmTime;
-  Duration? timeDiff;
   late Timer timer;
+  final QueueController _queueController = QueueController();
 
   @override
   Widget build(BuildContext context) {
@@ -62,35 +63,43 @@ class _ClockPageState extends State<ClockPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               TextButton(
-                  onPressed: () {
-                    showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.fromDateTime(_currentTime),
-                    ).then(
-                      (var value) => setState(() {
-                        if (value != null) {
-                          _alarmTime = DateTime(
-                            _currentTime.year,
-                            _currentTime.month,
-                            _currentTime.day,
-                            value.hour,
-                            value.minute,
+                onPressed: () => _queueController.clear(),
+                child: Text("Clear list"),
+              ),
+              TextButton(
+                  onPressed: () => showDialog(
+                        context: context,
+                        builder: (context) {
+                          List<int> items = List<int>.generate(
+                            60.floor(),
+                            (index) => index + 1,
                           );
-                          if (_alarmTime!.difference(_currentTime).isNegative) {
-                            _alarmTime = DateTime(
-                              _currentTime.year,
-                              _currentTime.month,
-                              _currentTime.day + 1,
-                              value.hour,
-                              value.minute,
-                            );
-                          }
-                          timeDiff = _alarmTime!.difference(_currentTime);
-                        }
-                      }),
-                    );
-                  },
-                  child: const Text("Choose new alarm")),
+                          return AlertDialog(
+                            title: const Text("Choose the duration"),
+                            content: DropdownButton<int>(
+                              items: items
+                                  .map(
+                                    (e) => DropdownMenuItem<int>(
+                                      value: e,
+                                      child: Text(
+                                        e.toString(),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (int? value) {
+                                if (value != null) {
+                                  addNewAlarm(
+                                    Duration(minutes: value),
+                                  );
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                  child: const Text("Add new alarm")),
             ],
           ),
         ),
@@ -104,43 +113,80 @@ class _ClockPageState extends State<ClockPage> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                DateFormat("'Now:' y/M/d H:m:s:S").format(_currentTime),
-                style: Theme.of(context).textTheme.titleLarge,
+              Flexible(
+                flex: 1,
+                child: Column(
+                  children: [
+                    Text(
+                      DateFormat("'Now:' H:m:s:S").format(_currentTime),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Expanded(
+                      child: InteractiveViewer(
+                        maxScale: 10,
+                        child: SizedBox.expand(
+                          child: CustomPaint(
+                            painter: ClockPainter(
+                              primaryMaterialColor: Colors.brown,
+                              timediffNegativeColor: Colors.redAccent,
+                              //timediffPositiveColor: Colors.black,
+                              currentTime: _currentTime,
+                              alarmData: _queueController.currentAlarm,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              InteractiveViewer(
-                maxScale: 10,
-                child: SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  height: MediaQuery.of(context).size.height / 2,
-                  child: CustomPaint(
-                    painter: ClockPainter(
-                      primaryColor: Colors.brown,
-                      timediffNegativeColor: Colors.redAccent,
-                      //timediffPositiveColor: Colors.black,
-                      time: _currentTime,
-                      endTime: _alarmTime,
+              if (_queueController.hasAlarm)
+                Flexible(
+                  flex: 1,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: _queueController.alarms
+                          .map(
+                            (alarm) => ListTile(
+                              title: Text(alarm.totalDuration.toString()),
+                              subtitle: Column(
+                                children: [
+                                  Text(DateFormat("'startTime:' y/M/d H:m:s:S")
+                                      .format(alarm.startTime)),
+                                  Text(DateFormat("'endTime:' y/M/d H:m:s:S")
+                                      .format(alarm.endTime)),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
                   ),
                 ),
-              ),
-              if (_alarmTime != null)
-                Text(
-                  DateFormat("'Alarm:' y/M/d H:m:s:S").format(_alarmTime!),
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              if (timeDiff != null)
-                Text(
-                  timeDiff!.inMinutes > 1
-                      ? "Difference: ${timeDiff!.inMinutes}m:${timeDiff!.inSeconds - timeDiff!.inMinutes * 60}s"
-                      : "Difference: ${timeDiff!.inSeconds} seconds",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+              if (_queueController.hasAlarm)
+                Builder(builder: (context) {
+                  var durationLeft =
+                      _queueController.currentAlarm!.durationLeftFromNow();
+                  return Text(
+                    durationLeft.inMinutes > 1
+                        ? "Difference: ${durationLeft.inMinutes}m:${durationLeft.inSeconds - durationLeft.inMinutes * 60}s"
+                        : "Difference: ${durationLeft.inSeconds} seconds",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  );
+                }),
             ],
           ),
         ),
       ),
     );
+  }
+
+  FutureOr<void> addNewAlarm(Duration? value) async {
+    if (value == null) return;
+
+    setState(() {
+      _queueController.addAlarm(value);
+    });
   }
 
   @override
@@ -155,12 +201,10 @@ class _ClockPageState extends State<ClockPage> {
     timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
         _currentTime = DateTime.now();
-        if (_alarmTime != null) {
-          timeDiff = _alarmTime!.difference(_currentTime);
-          if (timeDiff!.isNegative) {
+        if (_queueController.hasAlarm) {
+          if (_queueController.currentAlarm!.durationLeftFromNow().isNegative) {
             log("Alarm ended resetting state");
-            timeDiff = null;
-            _alarmTime = null;
+            _queueController.popAndGetNext();
           }
         }
       });
