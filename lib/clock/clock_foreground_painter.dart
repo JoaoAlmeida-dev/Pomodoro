@@ -176,8 +176,6 @@ class ClockForegroundPainter extends CustomPainter {
             startAngle: angleTime,
             outterArcLength: outterArcLength,
           );
-        }
-        if (hasCenterText) {
         } else {
           paintInnerTimeDifference(
             canvas: canvas,
@@ -187,17 +185,22 @@ class ClockForegroundPainter extends CustomPainter {
             endAngle: angleEndTime,
             startAngle: angleTime,
           );
+          canvas.drawPath(
+            Path()
+              ..addOval(
+                  Rect.fromCircle(center: center, radius: centerCircleRadius))
+              ..close(),
+            centerDotBrush,
+          );
         }
       }
-      if (!hasCenterText) {
-        canvas.drawPath(
-          Path()
-            ..addOval(
-                Rect.fromCircle(center: center, radius: centerCircleRadius))
-            ..close(),
-          centerDotBrush,
-        );
-      }
+    } else {
+      canvas.drawPath(
+        Path()
+          ..addOval(Rect.fromCircle(center: center, radius: centerCircleRadius))
+          ..close(),
+        centerDotBrush,
+      );
     }
 
     if (displayCenterTime || displayCenterAlarmTime) {
