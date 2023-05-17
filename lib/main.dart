@@ -1,18 +1,51 @@
 import 'dart:async';
 
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pomodoro/clock/controller/alarm_queue_cubit/alarm_queue_cubit.dart';
 import 'package:pomodoro/clock/controller/clock_theme/clock_theme_cubit.dart';
 import 'package:pomodoro/clock/models/alarm_data.dart';
 import 'package:pomodoro/extensions/datetime_extensions.dart';
+import 'package:pomodoro/routes.dart';
+import 'package:pomodoro/services/notification_service/notification_service.dart';
 
 import 'clock/clock_theme_selector.dart';
 import 'clock/clock_widget.dart';
 
-void main() {
+void main() async {
+  // Be sure to add this line if initialize() call happens before runApp()
+  WidgetsFlutterBinding.ensureInitialized();
+  NotificationService.initialize();
+  await AndroidAlarmManager.initialize();
+
   runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ClockThemeCubit>(create: (context) => ClockThemeCubit()),
+        BlocProvider<AlarmQueueCubit>(create: (context) => AlarmQueueCubit()),
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.deepPurple,
+        ),
+        routes: Routes.list,
+        initialRoute: Routes.initial,
+        navigatorKey: Routes.navigatorKey,
+      ),
+    );
+  }
 }
 
 class ClockPage extends StatefulWidget {
@@ -24,44 +57,22 @@ class ClockPage extends StatefulWidget {
   State<ClockPage> createState() => _ClockPageState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider<ClockThemeCubit>(
-          create: (context) => ClockThemeCubit(),
-        ),
-        BlocProvider<AlarmQueueCubit>(
-          create: (context) => AlarmQueueCubit(),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          primarySwatch: Colors.deepPurple,
-        ),
-        home: const MyHomePage(),
-      ),
-    );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const ClockPage();
-  }
-}
-
 class _ClockPageState extends State<ClockPage> {
   late Timer timer;
+  static const platform = MethodChannel('samples.flutter.dev/alarm');
   //final QueueController _queueController = QueueController();
+
+  @override
+  void dispose() {
+    super.dispose();
+    //timer.cancel();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.checkForNotifications();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +83,7 @@ class _ClockPageState extends State<ClockPage> {
       //   enableDrag: false,
       //   builder: (context) => ,
       // ),
+
       body: BlocBuilder<AlarmQueueCubit, AlarmQueueState>(
         builder: (context, state) {
           return SafeArea(
@@ -223,16 +235,5 @@ class _ClockPageState extends State<ClockPage> {
     //setState(() {
     //  _queueController.addAlarm(value);
     //});
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    //timer.cancel();
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 }

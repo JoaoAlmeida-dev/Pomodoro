@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:pomodoro/clock/models/alarm_data.dart';
+import 'package:pomodoro/services/notification_service/notification_service.dart';
 
 part 'alarm_queue_state.dart';
 
@@ -22,18 +23,9 @@ class AlarmQueueCubit extends Cubit<AlarmQueueState> {
     } else {
       newAlarm =
           AlarmData(startTime: currentTime, endTime: currentTime.add(duration));
-      timer =
-          timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-        if (state.hasAlarm) {
-          if (state.currentAlarm!.durationLeftFromNow().isNegative) {
-            log("Alarm ended resetting state");
-            popAndGetNext();
-            timer.cancel();
-          }
-        }
-      });
 
       emit(AlarmQueueState(alarmQueue: state.alarms..add(newAlarm)));
+      _startNewAlarm();
     }
   }
 
@@ -42,7 +34,24 @@ class AlarmQueueCubit extends Cubit<AlarmQueueState> {
     newAlarmsList.removeAt(0);
     if (state.alarms.isEmpty) {
       emit(const AlarmQueueState(alarmQueue: []));
+      return;
     }
+    emit(AlarmQueueState(alarmQueue: newAlarmsList));
+    _startNewAlarm();
+  }
+
+  void _startNewAlarm() {
+    if (!state.hasAlarm) return;
+    /*AlarmWrapper.oneShotAt(
+      state.currentAlarm!.endTime,
+    );
+*/
+    NotificationService.scheduleBigTextNotification(
+      title: "Alarm finished",
+      body: "Time to go back to studying",
+      time: state.currentAlarm!.endTime,
+    );
+
     timer = timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (state.hasAlarm) {
         if (state.currentAlarm!.durationLeftFromNow().isNegative) {
@@ -52,9 +61,6 @@ class AlarmQueueCubit extends Cubit<AlarmQueueState> {
         }
       }
     });
-    emit(
-      AlarmQueueState(alarmQueue: newAlarmsList),
-    );
   }
 
   void clear() => emit(const AlarmQueueState(alarmQueue: []));
