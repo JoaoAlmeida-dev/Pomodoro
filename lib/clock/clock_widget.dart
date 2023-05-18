@@ -22,7 +22,7 @@ class _ClockState extends State<Clock> with SingleTickerProviderStateMixin {
   void initState() {
     animationController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 10),
+      duration: const Duration(seconds: 10),
     )..repeat();
     super.initState();
   }

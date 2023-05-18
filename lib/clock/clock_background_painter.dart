@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:pomodoro/clock/models/alarm_data.dart';
-import 'package:pomodoro/extensions/datetime_extensions.dart';
 
 class ClockBackgroundPainter extends CustomPainter {
   final Color _borderColor;
@@ -41,13 +39,13 @@ class ClockBackgroundPainter extends CustomPainter {
     final outLineBrush = Paint()
       ..color = _borderColor
       ..style = PaintingStyle.fill;
-    final centerDotBrush = Paint()..color = _borderColor;
+    //final centerDotBrush = Paint()..color = _borderColor;
 
     double outterBorderCircleRadius = radius * 0.9;
     double backgroundCircleRadius = radius * 0.8;
     double outterBorderWidth =
         outterBorderCircleRadius - backgroundCircleRadius;
-    double centerCircleRadius = radius * 0.05;
+    //double centerCircleRadius = radius * 0.05;
 
     double hour24TextRadius =
         outterBorderCircleRadius - (outterBorderWidth * 4);
@@ -58,7 +56,7 @@ class ClockBackgroundPainter extends CustomPainter {
     double hour12LineWidth = outterBorderWidth * 0.4;
     double minTextRadius = outterBorderCircleRadius - (outterBorderWidth) * 0.5;
     double minTextFontSize = radius * 0.06;
-    double centerTextFontSize = radius * 0.15;
+    //double centerTextFontSize = radius * 0.15;
 
     canvas.drawCircle(center, radius * 0.9, fillBrush);
     //canvas.drawCircle(center, radius * 0.9, outLineBrush);

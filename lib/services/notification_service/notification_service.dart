@@ -62,7 +62,7 @@ class NotificationService {
 
   static void _onSelectNotification(NotificationResponse notificationResponse) {
     Navigator.of(Routes.navigatorKey!.currentContext!)
-        .pushNamed(Routes.alarmPage);
+        .pushReplacementNamed(Routes.alarmPage);
   }
 
   static Future showBigTextNotification({

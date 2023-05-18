@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:pomodoro/clock/controller/alarm_queue_cubit/alarm_queue_cubit.dart';
@@ -58,14 +57,9 @@ class ClockPage extends StatefulWidget {
 }
 
 class _ClockPageState extends State<ClockPage> {
-  late Timer timer;
-  static const platform = MethodChannel('samples.flutter.dev/alarm');
-  //final QueueController _queueController = QueueController();
-
   @override
   void dispose() {
     super.dispose();
-    //timer.cancel();
   }
 
   @override
@@ -223,7 +217,6 @@ class _ClockPageState extends State<ClockPage> {
                         clockWidget,
                       ],
                     );
-                    break;
                 }
               }),
             ),

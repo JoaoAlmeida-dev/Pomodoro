@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
 import 'package:pomodoro/clock/models/alarm_data.dart';
 import 'package:pomodoro/services/notification_service/notification_service.dart';
 

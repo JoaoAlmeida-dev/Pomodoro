@@ -1,6 +1,5 @@
 part of 'alarm_queue_cubit.dart';
 
-@immutable
 class AlarmQueueState {
   const AlarmQueueState({required List<AlarmData> alarmQueue})
       : _alarmFifoQueue = alarmQueue;

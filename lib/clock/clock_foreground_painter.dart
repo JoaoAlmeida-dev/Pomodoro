@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pomodoro/clock/clock_background_painter.dart';
 import 'package:pomodoro/clock/models/alarm_data.dart';
@@ -64,10 +63,8 @@ class ClockForegroundPainter extends CustomPainter {
     final Offset center = Offset(centerX, centerY);
     final double radius = math.min(centerX, centerY);
 
-    final fillBrush = Paint()..color = _backgroundColor;
-    final outLineBrush = Paint()
-      ..color = _borderColor
-      ..style = PaintingStyle.fill;
+    //final fillBrush = Paint()..color = _backgroundColor;
+    //final outLineBrush = Paint()..color = _borderColor..style = PaintingStyle.fill;
     final centerDotBrush = Paint()..color = _borderColor;
 
     double outterBorderCircleRadius = radius * 0.9;
@@ -156,8 +153,9 @@ class ClockForegroundPainter extends CustomPainter {
         String? centerText;
 
         if (displayCenterTime && !displayCenterAlarmTime) centerText = time;
-        if (!displayCenterTime && displayCenterAlarmTime)
+        if (!displayCenterTime && displayCenterAlarmTime) {
           centerText = alarmTime;
+        }
         if (displayCenterTime && displayCenterAlarmTime) {
           centerText = alarmData != null ? alarmTime : time;
         }
@@ -381,8 +379,8 @@ class ClockForegroundPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout(minWidth: 0, maxWidth: backgroundCircleRadius * 2);
 
-    double hourX1 = center.dx - textPainter.width / 2;
-    double hourY1 = center.dy - textPainter.height / 2;
+    //double hourX1 = center.dx - textPainter.width / 2;
+    //double hourY1 = center.dy - textPainter.height / 2;
     double ovalScale = 0.8;
     var rect = Rect.fromPoints(
         Offset(
