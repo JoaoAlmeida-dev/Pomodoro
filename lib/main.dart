@@ -166,6 +166,10 @@ class _ClockPageState extends State<ClockPage> {
                                         title:
                                             const Text("Choose the duration"),
                                         content: DropdownButton<int>(
+                                          menuMaxHeight: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.5,
                                           items: items
                                               .map(
                                                 (e) => DropdownMenuItem<int>(

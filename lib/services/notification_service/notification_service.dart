@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:pomodoro/routes.dart';
 import 'package:pomodoro/services/logger/logger.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -60,7 +61,8 @@ class NotificationService {
   }
 
   static void _onSelectNotification(NotificationResponse notificationResponse) {
-    //Navigator.of(Routes.navigatorKey!.currentContext!).pushReplacementNamed(Routes.initial);
+    Navigator.of(Routes.navigatorKey!.currentContext!)
+        .pushNamed(Routes.alarmPage);
   }
 
   static Future showBigTextNotification({
@@ -90,8 +92,9 @@ class NotificationService {
     );
 
     var not = NotificationDetails(
-        android: androidPlatformChannelSpecifics,
-        iOS: const DarwinNotificationDetails());
+      android: androidPlatformChannelSpecifics,
+      iOS: const DarwinNotificationDetails(),
+    );
 
     await _instance.flutterLocalNotificationsPlugin.show(id, title, body, not);
   }
@@ -125,7 +128,6 @@ class NotificationService {
       category: AndroidNotificationCategory.stopwatch,
       colorized: true,
       color: Colors.pink,
-      ongoing: true,
       ledColor: Colors.pink,
       //sound: RawResourceAndroidNotificationSound('notificiation'),
     );

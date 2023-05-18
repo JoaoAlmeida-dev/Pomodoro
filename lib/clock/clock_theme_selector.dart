@@ -40,6 +40,7 @@ class ClockThemeSelector extends StatelessWidget {
           BlocBuilder<ClockThemeCubit, ClockThemeState>(
             builder: (context, state) {
               return DropdownButton<MaterialColor>(
+                menuMaxHeight: MediaQuery.of(context).size.height * 0.5,
                 value: state.foreground,
                 icon: Icon(Icons.alarm, color: state.foreground),
                 items: availableColors.entries
@@ -69,6 +70,7 @@ class ClockThemeSelector extends StatelessWidget {
           BlocBuilder<ClockThemeCubit, ClockThemeState>(
             builder: (context, state) {
               return DropdownButton<MaterialColor>(
+                menuMaxHeight: MediaQuery.of(context).size.height * 0.5,
                 icon: Icon(Icons.circle, color: state.background),
                 value: state.background,
                 items: availableColors.entries
